@@ -1,0 +1,147 @@
+" File: .vimrc
+" Author: Damien ROTH
+" Last update: 4/01/2012
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" General                                                                     "
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set term=xterm-256color			" Allows 256 colors themes and extended key mappings (e.g. SHIFT)
+set nocompatible				" Use Vim settings, rather then Vi settings (much better!).
+filetype plugin on				" load filetype plugins
+filetype indent on				" load filetype indents
+filetype on						" detect the type of file
+set backspace=indent,eol,start	" more powerful backspacing
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Theme/Colors                                                                "
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+syntax on                       " active coloration
+set background=dark             " default background
+colorscheme elflord             " default coloration theme
+"NOTE: nice theme is 'colorsheme elflord' if you have a dark background
+
+" Custom Tab Bar
+hi TabLineFill cterm=underline ctermfg=White ctermbg=Black
+hi TabLine     cterm=underline ctermfg=White ctermbg=Black
+hi TabLineSel  cterm=bold,underline ctermfg=White ctermbg=DarkGrey
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"  Files/Backups                                                              "
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set nobackup					" Turn backup off (use SVN, GIT or TimeMachine instead)
+set nowb
+try
+	set directory=~/.vim/temp		" Set a directory for temp (swap) files
+	set undodir=~/.vim/undo			" Unable persistent undo
+	set undofile
+catch
+endtry
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Vim UI                                                                      "
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set ruler        " show the cursor position all the time
+set cmdheight=1  " the command bar is 2 high
+set hid          " you can change buffer without saving
+set backspace=2  " make backspace work normal
+set report=0     " tell us when anything is changed via :...
+set noerrorbells " don't make noise
+set ignorecase   " ignore case for searching
+set mouse=a      " enable mouse integration
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Visual Cues                                                                 "
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set number        " Show line number
+set showmatch     " show matching brackets
+set mat=5         " how many tenths of a second to blink matching brackets for
+set nohlsearch    " do not highlight searched for phrases
+set incsearch     " BUT do highlight as you type you search phrase
+set so=10         " Keep 10 lines (top/bottom) for scope
+set novisualbell  " don't blink
+set laststatus=2  " always show the status line
+set showcmd       " display incomplete commands
+set modeline      " display the current mode
+set nostartofline " keep the cursor in the same colon when changing line
+set statusline=%F%m%r%h%w\ [FORMAT=%{&ff}]\ [TYPE=%Y]\ [ASCII=\%03.3b]\ [HEX=\%02.2B]\ [POS=%04l,%04v][%p%%]\ [LEN=%L]
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Menu                                                                        "
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set wildmenu " menu completion
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Text Formatting/Layout                                                      "
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set fo=tcrqn      " See Help (complex)
+set ai            " autoindent
+set si            " smartindent
+set cindent       " do c-style identing
+set tabstop=4     " tab spacing
+set softtabstop=4 " 4 spaces when pressing <tab> unify
+set shiftwidth=4  " unify
+set expandtab     " space please!
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Key mapping                                                                 "
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" (Un)indent selected lines and keep highlighting
+vnoremap	>			>gv
+vmap		<TAB>		>
+vnoremap	<			<gv
+vmap		<S-TAB>		<
+
+" Select all with Ctrl-A
+nnoremap	<C-a>		ggVG
+imap		<C-a>		<C-c><C-a>
+vmap		<C-a>		<C-c><C-a>
+
+" Undo with Ctrl-Z
+nnoremap	<C-z>		u
+imap		<C-z>		<C-o><C-z>
+vmap		<C-z>		<C-c><C-z>
+
+" Save file with Ctrl-S
+nnoremap	<C-s>		:w<CR>
+imap		<C-s>		<C-o><C-s>
+vmap		<C-s>		<C-c><C-s>
+
+" Open a new tab with Ctrl-T
+nnoremap	<C-t>		:tabnew<CR>
+imap		<C-t>		<C-c><C-t>
+vmap		<C-t>		<C-c><C-t>
+
+" Close tab with Ctrl-W
+nnoremap	<C-w>		:q<CR>
+imap		<C-w>		<C-c><C-w>
+vmap		<C-w>		<C-c><C-w>
+
+" Move between tabs with Shift and left/right arrows
+nnoremap	<S-Left>	:tabprev<CR>
+imap		<S-Left>	<C-c><S-Left>
+vmap		<S-Left>	<C-c><S-Left>
+
+nnoremap	<S-Right>	:tabprev<CR>
+imap		<S-Right>	<C-c><S-Right>
+vmap		<S-Right>	<C-c><S-Right>
+
+" Move 10 lines upper/lower with Shift and up/down arrows
+nnoremap	<S-Up>		10<Up>
+imap		<S-Up>		<C-o><S-Up>
+vmap		<S-Up>		<C-c><S-Up>
+
+nnoremap	<S-Down>	10<Down>
+imap		<S-Down>	<C-o><S-Down>
+vmap		<S-Down>	<C-c><S-Down>
+
+" Move between words with Alt and left/right arrows
+noremap		<D-Left>	w
+imap		<D-Left>	<C-o><D-Left>
+
+noremap		<D-Right>	b
+imap		<D-Right>	<C-o><D-Right>
+
+" Copy/paste integration with OS X clipboard
+vnoremap	y			y:call system("pbcopy", getreg("\""))<CR>
