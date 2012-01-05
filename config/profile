@@ -1,0 +1,54 @@
+#--------------#
+# Exports
+#--------------#
+
+#WMAKE
+export WMAKE_MODULE_DIR=$HOME/Workspace/wsnet-models
+
+export PATH=/usr/local/wsnet-2.0/bin:/Users/ysaak/.scripts:/opt/local/bin:/opt/local/sbin:/opt/msp430-gcc-4.4.5/bin:$PATH
+# Drivers capteurs
+export WSN430_DRIVERS_PATH=/Users/ysaak/Workspace/capteurs/wsn430-drivers-v1.7
+
+#--------------#
+# Autocomplete
+#--------------#
+
+complete -W "$(echo `cat ~/.ssh/config | grep "^Host" | cut -d ' ' -f 2`;)" ssh
+
+#--------------#
+# Alias
+#--------------#
+
+alias ls='ls -G'
+alias grep='grep --color=auto'
+
+alias go=". go_to"
+alias ll="ls -l"
+alias la="ls -a"
+alias optw="open -a textwrangler"
+alias vlc="open -a vlc"
+
+vim()
+{
+    local STTYOPTS="$(stty -g)"
+    stty stop '' -ixoff
+    command vim "$@"
+    stty "$STTYOPTS"
+}
+
+#--------------#
+# Misc
+#--------------#
+HISTCONTROL=ignoredups:ignorespace
+
+# Prompt color
+export PS1='\[\033[34m\]\u\[\033[00m\]@\[\033[33m\]\h\[\033[00m\]:\[\033[35m\]\w\[\033[00m\] $ '
+
+# Less Colors for Man Pages
+export LESS_TERMCAP_mb=$'\E[01;31m'       # begin blinking
+export LESS_TERMCAP_md=$'\E[01;38;5;74m'  # begin bold
+export LESS_TERMCAP_me=$'\E[0m'           # end mode
+export LESS_TERMCAP_se=$'\E[0m'           # end standout-mode
+export LESS_TERMCAP_so=$'\E[38;5;246m'    # begin standout-mode - info box
+export LESS_TERMCAP_ue=$'\E[0m'           # end underline
+export LESS_TERMCAP_us=$'\E[04;38;5;146m' # begin underline
