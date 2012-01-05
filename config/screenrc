@@ -1,0 +1,10 @@
+startup_message off
+vbell off
+ 
+# set a big scrolling buffer
+defscrollback 5000
+  
+# Activate tabs
+caption always
+caption string "%{kw}%-w%{wr}%n %t%{-}%+w %-=%{= kw}|%{yw} %d-%m-%Y %{yr}%c %{yk}${USER}%{yg}@%{yk}%H"
+   
