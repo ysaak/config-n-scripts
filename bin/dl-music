@@ -1,0 +1,131 @@
+#!/bin/bash
+
+CODE=""
+LOG_FILE="/tmp/yt-dl.log"
+OS=`uname -s`
+TERM_WIDTH=`stty size | cut -d ' ' -f2`
+STATUS=0
+
+trap bashtrap INT
+
+bashtrap()
+{
+    #echo -e "\rCTRL+C Detected !...executing bash trap !"
+    echo -e "\nDownload [\033[33mCANCELED\033[0m]"
+    kill $PID
+    wait $PID_PROGRESS
+
+
+    # Get filename
+    fileName=`grep "^\[download\] Destination:" ${LOG_FILE} | cut -d' ' -f3`
+
+    rm ${fileName}.part
+    rm $LOG_FILE
+
+    if [ $STATUS -eq 1 ]
+    then
+        rm ${TITLE}.mp3
+    fi
+
+    exit 1
+}
+
+function display_progress()
+{
+    while [ `ps -p $1 | wc -l` -eq 2 ]
+    do
+        line=`tail -1 ${LOG_FILE} | grep "\[download\].* ETA " | tr -s ' ' | tr '\r' '\n' | tail -1 | cut -d ' ' -f 2,7-`
+        echo -n -e "\rDownloading... [${line}]"
+        sleep 1
+    done
+}
+
+if [ $# -eq 1 ]; then
+	CODE=$1
+else
+	echo "Usage: $0 youtube-code"
+	exit 1
+fi
+
+# GET TITLE
+RAWTITLE=`youtube-dl -e $CODE 2> $LOG_FILE`
+if [ $? -ne 0 ]; then
+	echo -ne "[\033[31mERROR\033[0m] "
+	cat $LOG_FILE | cut -d ' ' -f2-
+	rm -f $LOG_FILE
+	exit 1
+fi
+rm -f $LOG_FILE
+
+if [ ${#RAWTITLE} -gt $TERM_WIDTH ]
+then
+    tw=$(($TERM_WIDTH-3))
+    echo "${RAWTITLE:0:${tw}}..."
+else
+    echo "${RAWTITLE}"
+fi
+TITLE=`echo $RAWTITLE | tr -s ' ' '_'`
+
+
+echo -n "" > $LOG_FILE
+youtube-dl --extract-audio --audio-format=mp3 $CODE &> $LOG_FILE &
+PID=$!
+disown
+echo $PID
+
+#exit 1
+
+display_progress $PID &
+PID_PROGRESS=$!
+
+wait $PID
+RES=$?
+wait $PID_PROGRESS &> /dev/null
+
+# clear line
+
+perl -e "print \"\r\",' ' x ${TERM_WIDTH}"
+
+if [ $RES -ne 0 ]; then
+	echo -e "\rDownloading... [\033[31mFailed\033[0m]"
+    perl -e "print \"\r\",'-' x ${TERM_WIDTH}"
+    echo "Log file: ${LOG_FILE}"
+    cat $LOG_FILE
+    perl -e "print \"\r\",'-' x ${TERM_WIDTH}"
+	exit 1
+fi
+
+echo -e "\rDownloading... [\033[32mDone\033[0m]"
+
+STATUS=1
+
+## Get filename
+fileName=`grep "^\[ffmpeg\] Destination:" ${LOG_FILE} | cut -d' ' -f3`
+
+CM3="${CODE}.mp3"
+
+# Need to do manual conversion of MAC OS X
+if [ ! -e $CM3 ] && [ $OS = "Darwin" ]
+then
+    # MP3 conversion
+    echo -ne "\rConverting... "
+    ffmpeg -i ${fileName} -vn -ar 44100 -ac 2 -ab 320k -f mp3 $TITLE.mp3 &> $LOG_FILE
+    if [ $? -ne 0 ]
+    then
+        echo -e " [\033[32mFailed\033[0m]"
+        perl -e "print \"\r\",'-' x ${TERM_WIDTH}"
+        echo "Log file: ${LOG_FILE}"
+        cat $LOG_FILE
+        perl -e "print \"\r\",'-' x ${TERM_WIDTH}"
+        exit 1
+    fi
+    rm $fileName
+    echo -e " [\033[32mDone\033[0m]"
+else
+    # Just rename the file
+    extension=${fileName##*.}
+    mv $fileName $TITLE.$extension
+fi
+
+rm $LOG_FILE
+exit 0

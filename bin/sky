@@ -1,0 +1,182 @@
+#!/bin/bash
+
+SKY_TOOLS_PATH=~/Workspace/contiki/ntools
+
+function getTelosB
+{
+    local  __resultvar=$1
+
+    local COUNT=`find /dev -name "tty.usbserial-*" -maxdepth 1 | wc -l`
+    local TELOSS=( `find /dev -name "tty.usbserial-*" -maxdepth 1` )
+
+    if [ $COUNT -eq 1 ]
+    then
+        eval $__resultvar="'$TELOSS'"
+    elif [ $COUNT -eq 0 ]
+    then
+        echo "Found no TelosB devices"
+        exit 1
+    else
+        while [ 255 -eq 255 ]
+        do
+            echo "Found $COUNT devices"
+
+            for i in $(seq 0 $((${#TELOSS[@]} - 1)))
+            do
+                echo $i - ${TELOSS[$i]}
+            done
+            echo $((i+1)) - Exit
+
+            echo -n "Select a device or exit : "
+            read choose
+
+            if [ $choose -ge 0 ] && [ $choose -lt ${#TELOSS[@]} ]
+            then
+                eval $__resultvar="'${TELOSS[$choose]}'"
+                break
+            elif [ $choose -eq ${#TELOSS[@]} ]
+            then
+                exit 1
+            fi
+        done
+    fi
+}
+
+# Param:
+# 1 - device
+function resetDevice
+{
+    python ${SKY_TOOLS_PATH}/msp430-bsl-linux -c $1 --telosb -r &> /tmp/skyrst.log
+
+    if [ $? -eq 0 ]
+    then
+        echo -e "[\033[32mDone\033[0m]"
+        rm /tmp/skyrst.log
+    else
+        echo -e "[\033[31mERROR\033[0m]"
+        echo "------------------------------"
+        echo "Log stored in : /tmp/skyrst.log"
+        echo "------------------------------"
+        cat /tmp/skyrst.log
+        exit 1
+    fi
+}
+
+# Params:
+# 1 - device
+# 2 - hex file
+function progDevice
+{
+    python ${SKY_TOOLS_PATH}/msp430-bsl-linux -c $1 --telosb -r -e -I -p $2 2> /tmp/skyprog.log
+
+    if [ $? -eq 0 ]
+    then
+        echo -e "[\033[32mDone\033[0m]"
+        rm /tmp/skyprog.log
+    else
+        echo -e "[\033[31mERROR\033[0m]"
+        echo "------------------------------"
+        echo "Log stored in : /tmp/skyprog.log"
+        echo "------------------------------"
+        cat /tmp/skyprog.log
+        exit 1
+    fi
+}
+
+# Param:
+# 1 - device
+function readDevice
+{
+    exec ${SKY_TOOLS_PATH}/serialdump -T"%F %H:%M:%S" -b115200 $1
+}
+
+function skytohex
+{
+    echo -n "Converting $1 .sky to $1 .hex ... "
+
+    msp430-objcopy -O ihex $1.sky $1.hex &> /tmp/skyhex.log
+
+    if [ $? -eq 0 ]
+    then
+        echo -e "[\033[32mDone\033[0m]"
+        rm /tmp/skyhex.log
+    else
+        echo -e "[\033[31mERROR\033[0m]"
+        echo "------------------------------"
+        echo "Log stored in : /tmp/skyhex.log"
+        echo "------------------------------"
+        cat /tmp/skyhex.log
+        exit 1
+    fi
+
+}
+
+# Param:
+# 1 - progname
+function usage
+{
+    PROGNAME=`basename $1`
+    echo "Usage of $PROGNAME:"
+    echo "  Program or Reset easily a TelosB on MAC OS"
+    echo ""
+    echo -e "  - $PROGNAME tohex file\tConvert a sky file to a hex file"
+    echo -e "  - $PROGNAME file.hex\tProgram file.hex"
+    echo -e "  - $PROGNAME reset\t\tReset the installed TelosB"
+    echo -e "  - $PROGNAME read\t\tRead output from a TelosB"
+}
+
+if [ $# -eq 0 ]
+then
+    usage $0
+    exit 1
+fi
+
+
+if [ $1 = "reset" ]
+then
+    # Try to get a device
+    DEVICE=""
+    getTelosB DEVICE
+
+    echo "Using device: $DEVICE"
+
+    # Just reset the device
+    echo -n "Reset device ... "
+    resetDevice $DEVICE
+elif [ $1 = "tohex" ]
+then
+    skytohex $2
+elif [ $1 = "read" ]
+then
+    # Try to get a device
+    DEVICE=""
+    getTelosB DEVICE
+
+    echo "Using device: $DEVICE"
+
+    readDevice $DEVICE
+else
+    # first arg is the file to program
+    if [ -f $1 ]
+    then
+        # Try to get a device
+        DEVICE=""
+        getTelosB DEVICE
+
+        echo "Using device: $DEVICE"
+
+
+        # Do prog
+        # prog, 1 reset
+        echo -n "Prog device using $1 ... "
+        progDevice $DEVICE $1
+        echo -n "Reset device ... "
+        resetDevice $DEVICE
+
+    else
+        echo "$1 does not exists"
+        exit 1
+    fi
+fi
+
+exit 0

@@ -39,7 +39,7 @@ set foldmethod=syntax
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 syntax on                       " active coloration
 set background=dark             " default background
-"colorscheme elflord             " default coloration theme
+colorscheme solarized             " default coloration theme
 "NOTE: nice theme is 'colorsheme elflord' if you have a dark background
 
 " Custom Tab Bar
@@ -161,7 +161,7 @@ vmap		<S-Down>	<C-c><S-Down>
 " Copy/paste integration with OS X clipboard
 vnoremap	y			y:call system("pbcopy", getreg("\""))<CR>
 
-" auto complete 
+" auto complete
 inoremap <expr> <CR> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
 inoremap <expr> <C-n> pumvisible() ? '<C-n>' :
   \ '<C-n><C-r>=pumvisible() ? "\<lt>Down>" : ""<CR>'

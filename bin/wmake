@@ -1,0 +1,227 @@
+#!/bin/bash
+
+pushd . > /dev/null
+
+#VAR TO SET : WMAKE_MODULE_DIR
+
+#First: check existance of module dir
+if [ `env | cut -d"=" -f1 | grep "WMAKE_MODULE_DIR" | wc -l` -eq 0 ]
+then
+    echo "Please set the WMAKE_MODULE_DIR var."
+    echo "This var should point to your module directory"
+    exit 1
+fi
+
+#MODULE_DIR="$HOME/wsnet-models"
+INCLUDE_DIR="$WMAKE_MODULE_DIR/include"
+USERMODEL_DIR="$WMAKE_MODULE_DIR/user_models"
+
+WMAKE_FILE="wmake"
+COLOR_GREEN="\\033[32m"
+COLOR_RED="\[\033[31m"
+COLOR_DEFAULT="\\033[0m"
+ACTION=-1
+
+function cleandir {
+    pushd . > /dev/null
+
+    cd $USERMODEL_DIR
+
+    if [ -f "Makefile" ]
+    then
+        make clean > /dev/null
+    fi
+
+    popd > /dev/null
+}
+
+
+# aleady inited, just want to compile
+if [ -e "$USERMODEL_DIR/$WMAKE_FILE" ] && [ $# -eq 0 ]
+then
+    ACTION=0
+elif [ $# -ge 1 ]
+then
+    tmp=`basename $1 | cut -d. -f1`
+
+
+    if [ $tmp == "clean" ]
+    then
+        ACTION=2
+    elif [ $tmp == "info" ]
+    then
+        ACTION=3
+    elif [ $# -eq 2 ]
+    then
+        ACTION=1
+
+        TYPE=`basename $1 | cut -d. -f1`
+        MODULE=`basename $2 | cut -d. -f1`
+    fi
+fi
+
+if [ $ACTION -lt 0 ]
+then
+    echo "usage: $0 library name"
+    exit 0
+fi
+
+if [ $ACTION -eq 0 ]
+then
+    # do compile actions
+
+    # get info from the wmake file
+    TYPE=`cat $WMAKE_MODULE_DIR/user_models/wmake | cut -f1`
+    MODULE=`cat $WMAKE_MODULE_DIR/user_models/wmake | cut -f2`
+
+    echo "WMAKE [Model: $TYPE, Name: $MODULE]"
+
+    # Remove old files
+    rm -f $USERMODEL_DIR/$MODULE.c $USERMODEL_DIR/$MODULE.h
+
+
+    # Add the new files
+    CFILE=$WMAKE_MODULE_DIR/${TYPE}_models/${MODULE}.c
+    if [ -e $CFILE ]
+    then
+        cp $CFILE $USERMODEL_DIR || exit 1
+    else
+        echo "File \"$CFILE\" does not exists"
+        exit 1
+    fi
+
+    HEADER_FILE=$WMAKE_MODULE_DIR/${TYPE}_models/${MODULE}.h
+
+    if [ -e $HEADER_FILE ]; then
+        cp $HEADER_FILE $USERMODEL_DIR || exit 1
+    fi
+
+    cd $USERMODEL_DIR
+
+    # Compiling
+    echo -n "Compiling ... "
+
+    make > make.err.log 2>&1
+
+    if [ $? -eq 0 ]
+    then
+        echo -e "[${COLOR_GREEN}OK${COLOR_DEFAULT}]"
+    else
+        echo -e "[${COLOR_RED}FAILED${COLOR_DEFAULT}]"
+        cat make.err.log
+        exit 1
+    fi
+
+    echo -n "Installing ... "
+    make install > minstall.log 2>&1
+
+    if [ $? -eq 0 ]
+    then
+        echo -e "[${COLOR_GREEN}COMPLETE${COLOR_DEFAULT}]"
+    else
+        echo -e "[${COLOR_RED}OFAILED${COLOR_DEFAULT}]"
+        cat minstall.log
+        exit 1
+    fi
+
+elif [ $ACTION -eq 1 ]
+then
+    # init the system
+    echo "WMAKE [Model: $TYPE, Name: $MODULE]"
+
+    # call make clean
+    cleandir
+
+    # remove all source and header files
+    rm -f $USERMODEL_DIR/$WMAKE_FILE $USERMODEL_DIR/*.c $USERMODEL_DIR/*.h $USERMODEL_DIR/*.log
+
+    # Create the wmake file
+    echo "$TYPE	$MODULE" > $USERMODEL_DIR/$WMAKE_FILE
+
+    # Add the new files
+    CFILE=$WMAKE_MODULE_DIR/${TYPE}_models/${MODULE}.c
+    if [ -e $CFILE ]
+    then
+        cp $CFILE $USERMODEL_DIR || exit 1;
+    else
+        echo "File \"$CFILE\" does not exists"
+        exit 1
+    fi
+
+    HEADER_FILE=$WMAKE_MODULE_DIR/${TYPE}_models/${MODULE}.h
+    if [ -e $HEADER_FILE ]; then
+        cp $HEADER_FILE $USERMODEL_DIR || exit 1;
+    fi
+
+    cd $USERMODEL_DIR
+
+    # Edit Makefile.am
+    echo lib_LTLIBRARIES = lib${TYPE}_${MODULE}.la > Makefile.am
+    echo lib${TYPE}_${MODULE}_la_CFLAGS = "-I${INCLUDE_DIR} \$(CFLAGS) \$(GLIB_FLAGS)" -Wall -Werror -g >> Makefile.am
+    echo lib${TYPE}_${MODULE}_la_SOURCES = ${MODULE}.c >> Makefile.am
+    echo lib${TYPE}_${MODULE}_la_LDFLAGS = -module >> Makefile.am
+
+    # Init compilation
+    echo -n "Bootstrap ... "
+    ./bootstrap > bootstrap.log 2>&1
+    if [ $? -eq 0 ]
+    then
+        echo -e "[${COLOR_GREEN}OK${COLOR_DEFAULT}]"
+    else
+        echo -e "[${COLOR_RED}FAILED${COLOR_DEFAULT}]"
+        cat bootstrap.log
+        exit 1
+    fi
+
+    echo -n "Configure ... "
+    ./configure --prefix=$WMAKE_MODULE_DIR \
+        	    --libdir=$WMAKE_MODULE_DIR/lib \
+	            --with-wsnet-dir=/usr/local/wsnet-2.0  > configure.err.log 2>&1
+
+    if [ $? -eq 0 ]
+    then
+        echo -e "[${COLOR_GREEN}OK${COLOR_DEFAULT}]"
+    else
+        echo -e "[${COLOR_RED}FAILED${COLOR_DEFAULT}]"
+        cat configure.err.log
+        exit 1
+    fi
+
+    echo -n "Compiling ... "
+    make > make.err.log 2>&1
+    if [ $? -eq 0 ]
+    then
+        echo -e "[${COLOR_GREEN}OK${COLOR_DEFAULT}]"
+    else
+        echo -e "[${COLOR_RED}FAILED${COLOR_DEFAULT}]"
+        cat make.err.log
+        exit 1
+    fi
+
+    echo -n "Installing ... "
+    make install > minstall.log 2>&1
+    if [ $? -eq 0 ]
+    then
+        echo -e "[${COLOR_GREEN}COMPLETE${COLOR_DEFAULT}]"
+    else
+        echo -e "[${COLOR_RED}FAILED${COLOR_DEFAULT}]"
+        cat minstall.log
+        exit 1
+    fi
+
+elif [ $ACTION -eq 3 ]
+then
+    TYPE=`cat $WMAKE_MODULE_DIR/user_models/wmake | cut -f1`
+    MODULE=`cat $WMAKE_MODULE_DIR/user_models/wmake | cut -f2`
+
+    echo "WMAKE - Current module"
+    echo "Model: $TYPE"
+    echo "Name: $MODULE"
+else
+    # clean data
+    echo "WMAKE"
+    echo "Clean user models directory"
+    cleandir
+fi
+
+popd > /dev/null
