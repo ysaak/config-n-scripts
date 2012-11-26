@@ -60,7 +60,8 @@ prompt() {
 	GITSTATUS=$(git status 2> /dev/null)
 	if [ $? -eq 0 ]; then
 		# BRANCH=`git describe --contains --all HEAD`
-        BRANCH=`basename $(git symbolic-ref HEAD)`
+        #BRANCH=`basename $(git symbolic-ref HEAD)`
+        BRANCH=`git rev-parse --abbrev-ref HEAD`
 		LEFTPROMPT=$BRANCH" ⭠ "$LEFTPROMPT
 
         echo $GITSTATUS | grep "to be committed" > /dev/null 2>&1
@@ -74,7 +75,19 @@ prompt() {
                 LEFTPROMPT="\[\033[32m\]"$LEFTPROMPT
             fi
         fi
-	fi
+    elif [ -d ".svn" ]; then
+        SVNSTATUS=$(svn status 2>&1)
+        echo $SVNSTATUS | grep 'not a working copy' 2>&1 > /dev/null
+        if [ $? -eq 1 ]; then
+            LEFTPROMPT="svn ⭠ "$LEFTPROMPT
+            echo $SVNSTATUS | grep -P '^\s*[AMDCR]' 2>&1 > /dev/null
+            if [ $? -eq 0 ]; then
+                LEFTPROMPT="\[\033[31m\]"$LEFTPROMPT
+            else
+                LEFTPROMPT="\[\033[32m\]"$LEFTPROMPT
+            fi
+        fi
+    fi
 
 	if [ $EUID -ne 0 ]; then
 		PS1=$LEFTPROMPT"\[\033[00m\] > "
