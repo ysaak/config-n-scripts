@@ -1,0 +1,125 @@
+#--------------#
+# Get current directory
+#--------------#
+SOURCE="${BASH_SOURCE[0]}"
+DIR="$( dirname "$SOURCE" )"
+while [ -h "$SOURCE" ]
+do 
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+  DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
+done
+DIR="$(dirname "$( cd -P "$( dirname "$SOURCE" )" && pwd )")"
+
+#--------------#
+# Exports
+#--------------#
+
+#WMAKE
+export WMAKE_MODULE_DIR=$HOME/Workspace/wsnet-models
+export NODE_PATH="/usr/local/lib/node"
+export PATH=/usr/local/bin:/usr/local/sbin:/usr/local/wsnet-2.0/bin:${DIR}/bin:/opt/msp430-gcc-4.4.5/bin:/usr/local/mysql/bin:/usr/local/share/npm/bin:$PATH
+
+# Better less
+export LESS=" -R "
+eval $(${DIR}/bin/lesspipe)
+
+#--------------#
+# Autocomplete
+#--------------#
+
+complete -W "$(ls -l ~/Documents/Publications/ | grep "^[dl]" | tr -s ' ' | cut -d' ' -f9)" pub
+complete -W "$(echo `cat ~/.ssh/config | grep "^Host" | cut -d ' ' -f 2`;)" ssh
+source `brew --prefix`/Library/Contributions/brew_bash_completion.sh
+
+source ${DIR}/config/git-completion.bash
+
+#--------------#
+# Alias
+#--------------#
+
+[[ -r ${DIR}/config/bash_aliases ]] && . ${DIR}/config/bash_aliases
+
+#--------------#
+# Prompt
+#--------------#
+
+prompt() {
+	#USERNAME=`whoami`
+	#HOSTNAME=`hostname -s`
+	#CURRENTPATH=`pwd | sed "s|$HOME|~|g"`
+
+	# Change the Window title
+	#WINDOWTITLE="$USERNAME@$HOSTNAME"
+	#echo -ne "\033]0;$WINDOWTITLE\007"
+
+	# Change the dynamic prompt
+	#LEFTPROMPT="$Yellow$CURRENTPATH"
+	LEFTPROMPT="\[\033[35m\]\w\[\033[00m\]"
+
+	GITSTATUS=$(git status 2> /dev/null)
+	if [ $? -eq 0 ]; then
+		# BRANCH=`git describe --contains --all HEAD`
+        BRANCH=`basename $(git symbolic-ref HEAD)`
+		LEFTPROMPT=$BRANCH" ⭠ "$LEFTPROMPT
+
+        echo $GITSTATUS | grep "to be committed" > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+			LEFTPROMPT="\[\033[33m\]"$LEFTPROMPT
+        else
+            echo $GITSTATUS | grep "not staged" > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+                LEFTPROMPT="\[\033[31m\]"$LEFTPROMPT
+            else
+                LEFTPROMPT="\[\033[32m\]"$LEFTPROMPT
+            fi
+        fi
+	fi
+
+	if [ $EUID -ne 0 ]; then
+		PS1=$LEFTPROMPT"\[\033[00m\] > "
+	else
+		PS1=$LEFTPROMPT"\[\033[00m\] \# "
+	fi
+
+	# echo -e -n $LEFTPROMPT
+}
+
+# Define PROMPT_COMMAND if not already defined (fix: Modifying title on SSH connections)
+if [ -z "$PROMPT_COMMAND" ]; then
+	case $TERM in
+		xterm*)
+			PROMPT_COMMAND='printf "\033]0;%s@%s:%s\007" "${USER}" "${HOSTNAME%%.*}" "${PWD/#$HOME/~}"'
+			;;
+		screen)
+			PROMPT_COMMAND='printf "\033]0;%s@%s:%s\033\\" "${USER}" "${HOSTNAME%%.*}" "${PWD/#$HOME/~}"'
+			;;
+	esac
+fi
+
+# Main prompt
+PROMPT_COMMAND="prompt;$PROMPT_COMMAND"
+
+if [ $EUID -ne 0 ]; then
+	PS1="> "
+else
+	PS1="\# "
+fi
+
+#--------------#
+# Misc
+#--------------#
+HISTCONTROL=ignoredups:ignorespace
+
+# Prompt color
+#export PS1='\[\033[34m\]\u\[\033[00m\]@\[\033[33m\]\h\[\033[00m\]:\[\033[35m\]\w\[\033[00m\] > '
+#export PS1='\[\033[35m\]\w\[\033[00m\] > '
+
+# Less Colors for Man Pages
+export LESS_TERMCAP_mb=$'\E[01;31m'       # begin blinking
+export LESS_TERMCAP_md=$'\E[01;38;5;74m'  # begin bold
+export LESS_TERMCAP_me=$'\E[0m'           # end mode
+export LESS_TERMCAP_se=$'\E[0m'           # end standout-mode
+export LESS_TERMCAP_so=$'\E[38;5;246m'    # begin standout-mode - info box
+export LESS_TERMCAP_ue=$'\E[0m'           # end underline
+export LESS_TERMCAP_us=$'\E[04;38;5;146m' # begin underline
