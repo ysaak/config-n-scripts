@@ -43,7 +43,6 @@ source ${DIR}/config/git-completion.bash
 #--------------#
 # Prompt
 #--------------#
-
 prompt() {
 	#USERNAME=`whoami`
 	#HOSTNAME=`hostname -s`
@@ -55,7 +54,12 @@ prompt() {
 
 	# Change the dynamic prompt
 	#LEFTPROMPT="$Yellow$CURRENTPATH"
-	LEFTPROMPT="\[\033[35m\]\w\[\033[00m\]"
+    
+    if [ $REMOTECOMP -eq 0 ]; then
+	    LEFTPROMPT="\[\033[35m\]\w\[\033[00m\]"
+    else
+	    LEFTPROMPT="\[\033[33m\]\h\[\033[00m\]:\[\033[35m\]\w\[\033[00m\]"
+    fi
 
 	GITSTATUS=$(git status 2> /dev/null)
 	if [ $? -eq 0 ]; then

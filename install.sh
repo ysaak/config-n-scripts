@@ -1,14 +1,27 @@
-#!/bin/bash 
+#!/bin/bash
 
 # get current dir
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
+echo "Determining curring directory: $DIR"
+
+echo "Installing config files ..."
+
+read -p "Is remote computer [y/N]? " REPLY
+if [ -n "$REPLY" ] && [ $REPLY == "y" ]; then
+    REMOTECOMP=1
+else
+    REMOTECOMP=0
+fi
+
+echo "REMOTECOMP=$REMOTECOMP" > ${HOME}/.bashrc
+echo "DIR=$DIR" >> ${HOME}/.bashrc
+echo "source $DIR/config/bashrc" >> ${HOME}/.bashrc
 
 # install tools config files
-echo "Installing config files ..."
-CONFIG_FILES=( 'astylerc' 'screenrc' 'tmux.conf' 'bashrc' 'profile')
+CONFIG_FILES=( 'astylerc' 'screenrc' 'tmux.conf' 'profile')
 ELEMENTS=${#CONFIG_FILES[@]}
 
 for (( i=0;i<$ELEMENTS;i++)); do 
