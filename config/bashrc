@@ -1,15 +1,9 @@
-#--------------#
-# Get current directory
-#--------------#
-SOURCE="${BASH_SOURCE[0]}"
-DIR="$( dirname "$SOURCE" )"
-while [ -h "$SOURCE" ]
-do 
-  SOURCE="$(readlink "$SOURCE")"
-  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-  DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
-done
-DIR="$(dirname "$( cd -P "$( dirname "$SOURCE" )" && pwd )")"
+#--- OS ---#
+PLATFORM="linux"
+if [ ${OSTYPE//[0-9.]/} == "darwin" ]
+then
+    PLATFORM="mac"
+fi
 
 #--------------#
 # Exports
@@ -31,6 +25,9 @@ eval $(${DIR}/bin/lesspipe)
 complete -W "$(ls -l ~/Documents/Publications/ | grep "^[dl]" | tr -s ' ' | cut -d' ' -f9)" pub
 complete -W "$(echo `cat ~/.ssh/config | grep "^Host" | cut -d ' ' -f 2`;)" ssh
 source `brew --prefix`/Library/Contributions/brew_bash_completion.sh
+if [ -f $(brew --prefix)/etc/bash_completion ]; then
+    . $(brew --prefix)/etc/bash_completion
+fi
 
 source ${DIR}/config/git-completion.bash
 
@@ -38,6 +35,11 @@ source ${DIR}/config/git-completion.bash
 # Alias
 #--------------#
 
+command -v dircolors &> /dev/null
+if [ $? -eq 0 ]
+then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+fi
 [[ -r ${DIR}/config/bash_aliases ]] && . ${DIR}/config/bash_aliases
 
 #--------------#

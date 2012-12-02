@@ -1,6 +1,10 @@
 ## Bash aliases
-
-alias ls='ls -G'
+if [ $PLATFORM == "mac" ]
+then
+    alias ls='ls -G'
+else
+    alias ls='ls --color=auto'
+fi 
 alias grep='grep --color=auto'
 alias g='grep --color=auto -n'
 

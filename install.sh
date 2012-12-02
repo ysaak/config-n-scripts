@@ -21,7 +21,7 @@ echo "DIR=$DIR" >> ${HOME}/.bashrc
 echo "source $DIR/config/bashrc" >> ${HOME}/.bashrc
 
 # install tools config files
-CONFIG_FILES=( 'astylerc' 'screenrc' 'tmux.conf' 'profile')
+CONFIG_FILES=( 'astylerc' 'screenrc' 'tmux.conf' 'profile' 'dircolors')
 ELEMENTS=${#CONFIG_FILES[@]}
 
 for (( i=0;i<$ELEMENTS;i++)); do 
