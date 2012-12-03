@@ -22,11 +22,14 @@ eval $(${DIR}/bin/lesspipe)
 # Autocomplete
 #--------------#
 
-complete -W "$(ls -l ~/Documents/Publications/ | grep "^[dl]" | tr -s ' ' | cut -d' ' -f9)" pub
-complete -W "$(echo `cat ~/.ssh/config | grep "^Host" | cut -d ' ' -f 2`;)" ssh
-source `brew --prefix`/Library/Contributions/brew_bash_completion.sh
-if [ -f $(brew --prefix)/etc/bash_completion ]; then
-    . $(brew --prefix)/etc/bash_completion
+[ -d "$HOME/Documents/Publications/" ] && complete -W "$(ls -l $HOME/Documents/Publications/ | grep "^[dl]" | tr -s ' ' | cut -d' ' -f9)" pub
+[ -f "$HOME/.ssh/config" ] && complete -W "$(echo `cat $HOME/.ssh/config | grep "^Host" | cut -d ' ' -f 2`;)" ssh
+
+if [ $PLATFORM == "mac" ]; then
+    source `brew --prefix`/Library/Contributions/brew_bash_completion.sh
+    if [ -f $(brew --prefix)/etc/bash_completion ]; then
+        . $(brew --prefix)/etc/bash_completion
+    fi
 fi
 
 source ${DIR}/config/git-completion.bash
@@ -36,8 +39,7 @@ source ${DIR}/config/git-completion.bash
 #--------------#
 
 command -v dircolors &> /dev/null
-if [ $? -eq 0 ]
-then
+if [ $? -eq 0 ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
 fi
 [[ -r ${DIR}/config/bash_aliases ]] && . ${DIR}/config/bash_aliases
