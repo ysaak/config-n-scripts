@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+import mutagen
+import os, sys
+
+def buildFolderEntries(path):
+    entries = []
+
+    for entry in os.listdir('.'):
+
+        fileName, fileExtension = os.path.splitext(entry)
+
+        if fileExtension in ['.mp3', '.m4a']:
+            audioFile = mutagen.File(os.path.join(path, entry), easy=True)
+
+            if audioFile:
+                entries.append({
+                    'name': entry, 
+                    'duration': audioFile.info.length, 
+                    'infos': audioFile['performer'][0] + ' - ' + audioFile['title'][0]
+                })
+    return entries
+
+def writePlaylist(path, entries):
+    if len(entries) > 0:
+
+        playlist = os.path.join(path, "playlist.m3u")
+
+        if os.path.exists(playlist):
+            os.remove(playlist)
+
+        m3uFile = open(playlist, "w")
+        m3uFile.write('#EXTM3U\n\n')
+
+        for entry in entries:
+            m3uFile.write('#EXTINF:%d, %s\n%s\n\n' % (entry['duration'], entry['infos'], entry['name']))
+
+        m3uFile.close() 
+
+if __name__ == '__main__':
+    print sys.argv[0], ' - M3U playlist generator\n'
+
+    if len(sys.argv) != 2:
+        # Usage
+        print 'usage: python', sys.argv[0], 'playlist_folder'
+        sys.exit(-1)
+
+    
+    path = sys.argv[1]
+
+    if not os.access(path, os.F_OK):
+        print 'ERR: Playlist folder does not exists'
+        sys.exit(-1);
+    if not os.access(path, os.R_OK):
+        print 'ERR: Cannot read in playlist folder'
+        sys.exit(-1);
+    if not os.access(path, os.W_OK):
+        print 'ERR: Cannot write in playlist folder'
+        sys.exit(-1);
+
+    print 'Parsing folder ...', 
+
+    entries = buildFolderEntries(path)
+
+    print len(entries), 'entries'
+
+    print 'Writing file ...', 
+
+    writePlaylist(path, entries)
+
+    print 'Done.'
